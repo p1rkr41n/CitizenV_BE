@@ -32,7 +32,6 @@ require("./controllers/update/updater.js");
 
 
 
-
 //  newUser = new User({
 //                             name: 'cán bộ quận/huyện của thành phố '+ city.name,
 //                             addedBy: ,

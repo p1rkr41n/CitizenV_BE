@@ -1,4 +1,5 @@
 const { isValidObjectId } = require("mongoose")
+const mongoose = require("mongoose")
 const { Human } = require("../models/human/human")
 const { Family } = require("../models/human/family")
 const { User } = require("../models/user/user")
@@ -7,7 +8,7 @@ const {Address}  = require('../models/address/address')
 const { object } = require("joi")
 const { formatAddress } = require("./Util/utilAddress")
 const { formatHumanInfo } = require("./Util/utilHuman")
-
+const ObjectId = mongoose.Types.ObjectId
 
 exports.getInfoHumanWithId =  async function(req,res,next) {
     if(!isValidObjectId(req.params.id))
@@ -42,6 +43,7 @@ exports.getInfoHumanWithId =  async function(req,res,next) {
 
 
 exports.changeHumanInfoWithId = async function(req,res,next){
+    console.log(req.params.id,req.query.idFamily)
     if(!isValidObjectId(req.params.id)||!isValidObjectId(req.query.idFamily))
         return res.status(400).send('invalid id')
     const process = Promise.all([User.findOne({_id:req.decodedToken._id,idFamilyRef:req.query.idFamily}),
@@ -50,6 +52,8 @@ exports.changeHumanInfoWithId = async function(req,res,next){
                                     .select('-__v')    
                                 ])
     const [user,human] = await process
+    console.log([user,human])
+
     if(!user || !human)return res.send('invalid id')
     //neu dia chi tam tru cua human{id} thuoc khu vuc quan ly cua user
     let isManagedByUser = false
@@ -58,13 +62,12 @@ exports.changeHumanInfoWithId = async function(req,res,next){
     ref.forEach(id=>{if(id.equals(user.idManagedScopeRef)) 
                         isManagedByUser = true
                     })
-    const editedHuman ={idTemporaryResidenceAddressRef:human.idTemporaryResidenceAddressRef._id,
+    const editedHuman =new Human({idTemporaryResidenceAddressRef:human.idTemporaryResidenceAddressRef._id,
                         ...(req.body.human),
                         idFamilyRef:req.query.idFamily
-                    }
+                    })
     if(isManagedByUser ){
-        const {err}= Human.validate(editedHuman)
-        if(err) return res.status(400).send(err)
+        
         return Human.findOneAndUpdate({_id:req.params.id},req.body.human,{new: true,select:"name cardId -_id "})
                     .then(response=>res.status(200).send("success"))
                     .catch(err=>res.status(500).send(err))

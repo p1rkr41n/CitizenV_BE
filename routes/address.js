@@ -2,7 +2,7 @@ const { isValidObjectId } = require("mongoose");
 const {  getAreaById, getAddressById, getFullAddressOfVillageById, changeInfomationOfAreaWithId } = require("../controllers/address/address");
 const { getFamiliesWithIdArea } = require("../controllers/family");
 const {  getInfoHumansWithIdArea } = require("../controllers/human");
-const { getStatisticsInfoScopeById } = require("../controllers/statistics");
+const { getStatisticsInfoScopeById, getStatisticsInfo } = require("../controllers/statistics");
 const auth = require("../middleware/auth");
 const checkRoleToAddUser = require("../middleware/checkRoleToAddUser");
 const checkRoleToViewScopeInfo = require("../middleware/checkRoleToViewScopeInfo");
@@ -28,8 +28,10 @@ router.get(['/country/family',
             '/district/family',
             '/commune/family',
             '/village/family'],[auth,checkRoleToViewScopeInfo],getFamiliesWithIdArea)
+//statistics of area that logged in user manage
+router.get('/statistics',auth,getStatisticsInfo)
 
-//statistic 
+//statistics
 router.get(['/country/statistics','/city/statistics','/district/statistics','/commune/statistics',
 '/village/statistics'],[auth],getStatisticsInfoScopeById)
 

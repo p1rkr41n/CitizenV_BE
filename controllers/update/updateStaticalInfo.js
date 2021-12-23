@@ -91,19 +91,22 @@ const refreshStatisticsData = function() {
                     //save to database in this
                     console.log(result)
                     //sẽ có những element chỉ có id.các trường còn lại là undefined vì nó k có người dân nào
-                    // unitUpdates = result.map(unit=>StatisticsData.findOneAndUpdate({areaCode:unit.areaCode},unit))
+                    unitUpdates = result.map(unit=>StatisticsData.findOneAndUpdate({areaCode:unit.areaCode},unit))
                     //neu khong co areacode trong collection statistics thi se khong dc luu
-                        // return Promise.all(unitUpdates)
+                    return Promise.all(unitUpdates)
                     //neu co areaCode trong statistics roi thi no se them vao document moi, va van con documen co cung 
                     //areaCode trong collection statistics
                     // return StatisticsData.insertMany(result)
                 })
-                // .then(data=>console.log(data))
+                .then(data=>console.log(data))
 }
 //getdata statistics from statistic data of area
 const getData = (areaCodeString,typeOfstatisticscData,fieldNameOfStatisticData)=> {
     const _id ={}
-    _id[`${fieldNameOfStatisticData}`] =`$${typeOfstatisticscData}.${fieldNameOfStatisticData}`
+    _id[`${fieldNameOfStatisticData[0]}`] =`$${typeOfstatisticscData}.${fieldNameOfStatisticData[0]}`
+    if(fieldNameOfStatisticData[1]) 
+        _id[`${fieldNameOfStatisticData[1]}`] =`$${typeOfstatisticscData}.${fieldNameOfStatisticData[1]}`
+
     return StatisticsData.aggregate([
         {
             $match:{
@@ -119,6 +122,9 @@ const getData = (areaCodeString,typeOfstatisticscData,fieldNameOfStatisticData)=
                 count:{$sum:`$${typeOfstatisticscData}.count`},
             }
         },
+        {
+            $unwind:"$_id"
+        },
     ])
     //doan nay de test data tra ve
     // .then(data=>{
@@ -133,5 +139,7 @@ const getData = (areaCodeString,typeOfstatisticscData,fieldNameOfStatisticData)=
 // getData("01","populationData","gender")
 
 module.exports ={
-    getData
+    StatisticsData,
+    getData,
+    refreshStatisticsData
 }
