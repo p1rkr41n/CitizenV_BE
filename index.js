@@ -28,6 +28,7 @@ app.use("/api/address",routes.address);
 app.use("/api/human",routes.human);
 app.use("/api/family",routes.family);
 require("./startup/db")();
+require("./controllers/update/updater.js");
 
 
 
