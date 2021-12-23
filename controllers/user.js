@@ -160,7 +160,7 @@ const createUserController = async function(req,res,next) {
         .then(result=>{
             const newUser = new User({
                 addedBy:req.decodedToken._id,
-                name:req.body.name,
+                name:"cán bộ "+req.body.scopeName,
                 idManagedScopeRef :result._id,
                 idRoleRef :loggedInUser.idRoleRef.idRoleManageRef,
                 username: req.body.username,
@@ -206,14 +206,14 @@ const changePasswordController = async function(req,res,next) {
 
 const changeDeclarePermissionByIdUser  = async function(req,res,next) {
     if(!mongoose.isValidObjectId(req.query.id)) 
-        return res.status(400).send('invalid id 1')
+        return res.status(400).send('invalid id ')
     const account = await User.findOne({_id:new ObjectId(req.query.id)}).populate({path:'idRoleRef',model:'Role'})
-    if(!account) return res.status(400).send('invalid id 2')
+    if(!account) return res.status(400).send('invalid id ')
     if((account.addedBy.equals(req.decodedToken._id)) 
     || (req.decodedToken.role == 'A1'&& account.idRoleRef.name== 'A2')) {
         //neu khoa quyen khai bao thi khoa tat cac node do user quan ly va cac node cap duoi nua
 
-        if(req.body.declarable == false)
+        if(Boolean(req.body.declarable) == false)
             return User.updateMany({username:{$regex:'^'+ account.username}},{declarable:false})
                     .then(data=>res.status(200).send(data))
                     .catch(err=>res.status(500).send(err))
