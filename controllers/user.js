@@ -2,8 +2,7 @@ const { Scope } = require("../models/address/scope")
 const {User} = require("../models/user/user")
 const mongoose= require('mongoose')
 const { Address } = require("../models/address/address")
-const e = require("express")
-const { response } = require("express")
+const bcrypt = require('bcrypt')
 const ObjectId = mongoose.Types.ObjectId
 const getUsersController = async function(req,res,next) {
 
@@ -90,15 +89,7 @@ const getUserController = async function(req,res,next) {
 }
 
 const createUserController = async function(req,res,next) {
-    // addedBy: forEach(id =>Joi.ObjectId().required()), req.decodedToken._id
-    // name: Joi.string().required(), ten can bo 
-    // idManagedScopeRef:Joi.ObjectId(), id pham vi,khu vuc ma can bo{name} quan li
-    //phai them ca scope
-    // idRoleRef: Joi.ObjectId().required(), role cua can bo {name}
-    //check trong role collection
-    // username:Joi.string().required, id dang nhap cua can bo name
-    // password:Joi.string().required(), password cua can bo name
-    // tim trong db xem da ton tai id cua newUser chua
+
     const parttern1 =/^([0-9]{2}){1,4}$/ 
     const parttern2 = new RegExp('^'+req.decodedToken.username+"([0-9][0-9]){1}$")
     if(parttern1.test(req.body.username) &&req.decodedToken.role == 'admin')
@@ -119,7 +110,7 @@ const createUserController = async function(req,res,next) {
     const process =Promise.all([User.findOne({username:req.body.username}),
                     User.findOne({_id:req.decodedToken._id})
                     .populate({path: 'idRoleRef',model:'Role',
-                    populate:{path:'idRoleManageRef',model:'Role'}})
+                                populate:{path:'idRoleManageRef',model:'Role'}})
                     ])
     
     const result = await process
@@ -156,6 +147,8 @@ const createUserController = async function(req,res,next) {
     
     if(req.decodedToken.role == 'admin')  
         getScope = Scope.findOne({typeOfScope:'country'})
+    const salt = await bcrypt.genSalt(10);
+    const password = await bcrypt.hash(req.body.password, salt);    
     getScope
         .then(result=>{
             const newUser = new User({
@@ -164,7 +157,7 @@ const createUserController = async function(req,res,next) {
                 idManagedScopeRef :result._id,
                 idRoleRef :loggedInUser.idRoleRef.idRoleManageRef,
                 username: req.body.username,
-                password:req.body.password,
+                password:password,
             })
             const {err} = User.validate(newUser)
             if(err) return err
@@ -189,16 +182,21 @@ const changePasswordController = async function(req,res,next) {
         //nếu user la A1,account{id} la A2 hoặc user là người thêm  account{_id} 
         if(managedUser.addedBy.equals(req.decodedToken._id)||
             (managedUser.idRoleRef.name == 'A2'&& req.decodedToken.role =='A1')){
-            const result = await User.findOneAndUpdate({_id:new ObjectId(req.query.id)},{password:req.body.newPassword},{new:true})
+            const salt = await bcrypt.genSalt(10);
+            const newPassword = await bcrypt.hash(req.body.newPassword, salt); 
+            const result = await User.findOneAndUpdate({_id:new ObjectId(req.query.id)},{password:newPassword},{new:true})
             if(!result) return res.status(404).send("The user with the given ID was not found")
             return res.status(200).send("done")
         }
         return res.status(400).send('This user is not managed by you')
     }
-    result = await User.findOne({_id:req.decodedToken._id}).select('password')
+    const result = await User.findOne({_id:req.decodedToken._id}).select('password')
     if(!result) return res.status(400).send("invalid id")
-    if(result.password != req.body.oldPassword ) return res.status(400).send('wrong old password')
-    return User.findOneAndUpdate({_id:req.decodedToken._id},{password:req.body.newPassword},{new:true})
+    const isValidPassword =await bcrypt.compare(req.body.oldPassword,result.password)
+    if(!isValidPassword) return res.status(400).send('wrong old password')
+    const salt = await bcrypt.genSalt(10);
+    const newPassword = await bcrypt.hash(req.body.newPassword, salt);
+    return User.findOneAndUpdate({_id:req.decodedToken._id},{password:newPassword},{new:true})
             .then(response=> res.status(200).send("Done"))
             .catch(err=> res.send(500).send(err))
 

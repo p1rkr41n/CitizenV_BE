@@ -34,7 +34,7 @@ const statisticsDataSchema = new Schema({
     RangeAgeAndGenderData:{
         type:Array,
         require:true,
-        default:[{}]
+        default:[]
     },
     educationalData: {
         type:Array,
@@ -88,14 +88,9 @@ const refreshStatisticsData = function() {
                     })
                 })
                 .then(result=> {
-                    //save to database in this
-                    console.log(result)
-                    //sẽ có những element chỉ có id.các trường còn lại là undefined vì nó k có người dân nào
                     unitUpdates = result.map(unit=>StatisticsData.findOneAndUpdate({areaCode:unit.areaCode},unit))
-                    //neu khong co areacode trong collection statistics thi se khong dc luu
                     return Promise.all(unitUpdates)
-                    //neu co areaCode trong statistics roi thi no se them vao document moi, va van con documen co cung 
-                    //areaCode trong collection statistics
+                 
                     // return StatisticsData.insertMany(result)
                 })
                 .then(data=>console.log(data))

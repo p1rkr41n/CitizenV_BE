@@ -42,13 +42,13 @@ const updateAddresses = async (req,res,next)=> {
                                     idVillageRef:village._id,
                                 }
                     newAddresses.push (new Address(address))
-                    newStatisticsData =push(new StatisticsData({areaCode:village.areaCode}))
+                    newStatisticsData.push(new StatisticsData({areaCode:village.areaCode}))
                 }
      
             })
         return Promise.all([Address.insertMany(newAddresses),StatisticsData.insertMany(newStatisticsData)])
-                        .then(result=>res.status(200).send(result))
-                        .catch(err=>res.status(500).send(err))
+                        .then(result=>console.log(result))
+                        .catch(err=>console.log(err))
     }
     
     module.exports = {

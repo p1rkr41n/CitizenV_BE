@@ -153,6 +153,7 @@ exports.getFamiliesWithIdArea = async (req,res,next)=>{
                     if(!result.length) return res.status(404).send('not found')
                     const data = result.map(family=>{
                         return {
+                            _id: family._id,
                             headOfHouseholdName:family.headOfHouseholdName,
                             householdCode:family.householdCode,
                             address: formatAddress(family.idAddressRef),

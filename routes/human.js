@@ -1,4 +1,6 @@
-const { getInfoHumanWithId, removeHumanInfoById, getInfoHumen, createHuman, changeHumanInfoWithId } = require('../controllers/human')
+const { getInfoHumanWithId, removeHumanInfoById,
+     getInfoHumen, createHuman, changeHumanInfoWithId,
+      getEducationalLevels, getReligions, getGenders } = require('../controllers/human')
 const auth = require('../middleware/auth')
 const checkRoleToAddUser = require('../middleware/checkRoleToAddUser')
 const checkRoleToDeclareInfo = require('../middleware/checkRoleToDeclareInfo')
@@ -15,6 +17,9 @@ router.delete('/:id',[auth,checkRoleToDeclareInfo],removeHumanInfoById)
 router.post('/',[auth,checkRoleToDeclareInfo],createHuman)
 //edit info of human{id} of family{:idFamily(in req.query)}
 router.put('/:id',[auth,checkRoleToDeclareInfo],changeHumanInfoWithId)
+router.get('/religions',getReligions)
+router.get('/educational-levels',getEducationalLevels)
+router.get('/genders',getGenders)
 
 
 

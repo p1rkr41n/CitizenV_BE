@@ -15,6 +15,8 @@ const { Scope } = require('./models/address/scope');
 const   {Address} = require('./models/address/address');
 const { Human } = require('./models/human/human');
 const {Family} = require('./models/human/family');
+const { refreshStatisticsData } = require('./controllers/update/updateStaticalInfo');
+const { updateAddresses } = require('./controllers/update/updateAddresses');
 
 require("./startup/cors")(app);
 // create application/json parser
@@ -29,9 +31,7 @@ app.use("/api/human",routes.human);
 app.use("/api/family",routes.family);
 require("./startup/db")();
 require("./controllers/update/updater.js");
-
-
-
+// refreshStatisticsData()
 //  newUser = new User({
 //                             name: 'cán bộ quận/huyện của thành phố '+ city.name,
 //                             addedBy: ,

@@ -5,7 +5,7 @@ const { Human } = require("../models/human/human")
 const ObjectId = require('mongoose').Types.ObjectId
 const { isValidObjectId } = require("mongoose")
 const { Address } = require("../models/address/address")
-const { getData } = require("./update/updateStaticalInfo")
+const { getData, StatisticsData } = require("./update/updateStaticalInfo")
 const utilStatistics = require('./Util/utilStatistic')
 const { GENDERS, RELIGIONS, RANGEAGES, EDUCATIONALLEVELS } = require("../config/dataConfig")
 /*
@@ -147,11 +147,64 @@ const getStatisticsInfo = async  (req,res,next) => {
         
 }
 
+const getStatisticsInfoAreas = async (req,res,next)=>{
+    const typeOfScope = req.url.split('/')[1]
+    const ref={}
+    if(typeOfScope == "cities") ref.typeOfScope = "city"
+    else if(typeOfScope == "districts") ref.typeOfScope ="district"
+    else if(typeOfScope=="communes") ref.typeOfScope = "commune"
+    else if(typeOfScope =="villages") ref.typeOfScope ="village"
+    else return res.status(404).send('not found 1')
+    const area =await Scope.findOne({_id:req.query.idArea}).select('areaCode name')
+    if(typeOfScope =='cities' && req.decodedToken.role =='A1') area.areaCode =""
+    console.log(area,req.decodedToken)
+    console.log((new RegExp("^"+req.decodedToken.areaCode).test(area.areaCode)))
+    if(!area|| !(new RegExp("^"+req.decodedToken.areaCode).test(area.areaCode))) return res.status(404).send('not found 2')
+    const areas = await Scope.find({...ref, areaCode:{$regex:new RegExp("^"+ area.areaCode)}})
+                            .select('areaCode name')
+    if(!areas.length) return res.status(404).send('not found 3')
+    const statisticsField = req.query.statisticsField
+    const statisticsDatas ={
+        "populationData": [["gender"],[GENDERS]],
+        "employmentAndUnemploymentData":[["unemployment"]],
+        "ReligionData":[["religion"],[RELIGIONS]],
+        "RangeAgeAndGenderData":[["gender","rangeAge"],[GENDERS,RANGEAGES]],
+        "educationalData":[["educationalLevel"],[EDUCATIONALLEVELS]]
+    }
+    if(!Object.keys(statisticsDatas).includes(statisticsField))
+        return res.status(404).send('not found')
+    const statisticsDataAreas = Promise.all(areas.map(area=>{
+            return getData(area.areaCode,statisticsField,statisticsDatas[statisticsField][0])
+    }))
+        return statisticsDataAreas
+                .then(data=>{
+                    const results= data.map(result=>{
+                            return result.map(unit=>{
+                                return {...unit._id,count:unit.count}
+                            })
+                    })
+                    return res.status(200).send(
+                       results.map((result,index)=>{
+                           return {
+                               areaName: areas[index].name,
+                               areaCode:areas[index].areaCode,
+                               statisticsField:result,
+                           }
+                       })
+                    ) 
+                })
+
+
+
+
+}
+
 
 
 
 
 module.exports = {
     getStatisticsInfoScopeById,
-    getStatisticsInfo
+    getStatisticsInfo,
+    getStatisticsInfoAreas
 }

@@ -8,6 +8,7 @@ const {Address}  = require('../models/address/address')
 const { object } = require("joi")
 const { formatAddress } = require("./Util/utilAddress")
 const { formatHumanInfo } = require("./Util/utilHuman")
+const { RELIGIONS, GENDERS, EDUCATIONALLEVELS } = require("../config/dataConfig")
 const ObjectId = mongoose.Types.ObjectId
 
 exports.getInfoHumanWithId =  async function(req,res,next) {
@@ -148,7 +149,8 @@ exports.getInfoHumen = async(req,res,next)=>{
                                 {path:'idPermanentAddressRef',model:'Address',
                                     populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
                             ])
-                    .limit(5)
+                    // .skip(10*req.query.page)
+                    .limit(10)
                     .then((results)=>{
                         if(!results.length)
                             res.status(404).send('not found')
@@ -253,4 +255,14 @@ exports.createHuman=async (req,res,next) => {
                     })
                     .then(result=> res.status(200).send('success'))
                     .catch(err=> res.status(500).send(err))
+}
+
+exports.getReligions = (req,res)=>{
+    return res.status(200).send(RELIGIONS)
+}
+exports.getGenders =(req,res)=>{
+    return res.status(200).send(GENDERS)
+}
+exports.getEducationalLevels =(req,res)=>{
+    return res.status(200).send(EDUCATIONALLEVELS)
 }
