@@ -39,12 +39,12 @@ exports.getInfoHumanWithId =  async function(req,res,next) {
     if(isManagedByUser )   
         return res.status(200).send(human)
         
-    return res.status(404).send("can't find data match with id in your area that you manage")
+    return res.status(404).send("not found")
 }
 
 
 exports.changeHumanInfoWithId = async function(req,res,next){
-    console.log(req.params.id,req.query.idFamily)
+
     if(!isValidObjectId(req.params.id)||!isValidObjectId(req.query.idFamily))
         return res.status(400).send('invalid id')
     const process = Promise.all([User.findOne({_id:req.decodedToken._id,idFamilyRef:req.query.idFamily}),
@@ -53,7 +53,6 @@ exports.changeHumanInfoWithId = async function(req,res,next){
                                     .select('-__v')    
                                 ])
     const [user,human] = await process
-    console.log([user,human])
 
     if(!user || !human)return res.send('invalid id')
     //neu dia chi tam tru cua human{id} thuoc khu vuc quan ly cua user
@@ -140,6 +139,8 @@ exports.getInfoHumen = async(req,res,next)=>{
                                 .map(address=>address._id)
 
         const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
+        const page =req.query.page -1
+        const numberOfDocumentsPerPage = 3
         
         return Human.find({idTemporaryResidenceAddressRef:{$in:idAddresses}})
                                     //populate temporary residence address
@@ -149,8 +150,8 @@ exports.getInfoHumen = async(req,res,next)=>{
                                 {path:'idPermanentAddressRef',model:'Address',
                                     populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
                             ])
-                    // .skip(10*req.query.page)
-                    .limit(10)
+                            .limit(numberOfDocumentsPerPage)
+                            .skip(numberOfDocumentsPerPage*page)
                     .then((results)=>{
                         if(!results.length)
                             res.status(404).send('not found')
@@ -255,6 +256,59 @@ exports.createHuman=async (req,res,next) => {
                     })
                     .then(result=> res.status(200).send('success'))
                     .catch(err=> res.status(500).send(err))
+}
+
+exports.findHumanInfo = async (req,res,next) =>{
+    const ref ={}
+    if(req.query.idCityRef){
+        if(!isValidObjectId(req.query.idCityRef))
+            return res.status(400).send('invalid id 1')
+        ref.idCityRef = req.query.idCityRef
+    }
+    if(req.query.idDistrictRef){
+        if(!isValidObjectId(req.query.idDistrictRef))
+            return res.status(400).send('invalid id 2')
+        ref.idDistrictRef = req.query.idDistrictRef
+    }
+    if(req.query.idCommuneRef){
+        if(!isValidObjectId(req.query.idCommuneRef))
+            return res.status(400).send('invalid id 3')
+        ref.idCommuneRef = req.query.idCommuneRef
+    }
+    if(req.query.idVillageRef){
+        if(!isValidObjectId(req.query.idVillageRef))
+            return res.status(400).send('invalid id 4')
+        ref.idVillageRef = req.query.idVillageRef
+    }
+
+    const addresses = await Address.find(ref)
+                                    .populate('idVillageRef' )
+    if(!addresses.length) return res.status(404).send('not found')
+    const addressIds =[]
+    addresses.forEach(address=>{
+        if((new RegExp("^"+ req.decodedToken.areaCode)).test(address.idVillageRef.areaCode))
+            addressIds.push(address._id)
+    })
+    const page =req.query.page -1
+    const numberOfDocumentsPerPage = 1
+    const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
+    return Human.find({idTemporaryResidenceAddressRef:{$in:addressIds},name:req.query.name})
+                        //populate temporary residence address
+                    .populate([{path:'idTemporaryResidenceAddressRef',model:'Address',select:'-_id ',
+                        populate:{path:addressFields,model: 'Scope',select:'name -_id'}},
+                        //populate permanent address
+                    {path:'idPermanentAddressRef',model:'Address',
+                        populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
+                    ])
+                .limit(numberOfDocumentsPerPage)
+                .skip(numberOfDocumentsPerPage*page)
+                .then(result=> {
+                    if(!result.length) return res.status(404).send('not found')
+                    const data = result.map(humanInfo=> formatHumanInfo(humanInfo))
+                    return res.status(200).send(data)
+                })
+                .catch(err=>res.send(err))
+    
 }
 
 exports.getReligions = (req,res)=>{

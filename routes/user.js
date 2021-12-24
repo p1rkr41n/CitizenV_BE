@@ -23,4 +23,5 @@ router.put('/change-declare-permission',[auth,checkDeclarablePermission],changeD
 router.get('/',[auth],getUserController)
 //delete user that logged in user manage
 router.delete('/:id',[auth,checkRoleToAddUser,checkDeclarablePermission],removeUserController)
+
 module.exports = router

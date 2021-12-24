@@ -122,7 +122,6 @@ const getStatisticsInfoScopeById = async (req,res,next) =>{
 
 const getStatisticsInfo = async  (req,res,next) => {
     const areaCode = req.decodedToken.areaCode
-    console.log(req.decodedToken.areaCode)
     return Promise.all([getData(areaCode,"populationData",["gender"]),
                                         getData(areaCode,"employmentAndUnemploymentData",["unemployment"]),
                                         getData(areaCode,"ReligionData",["religion"]),
@@ -155,13 +154,12 @@ const getStatisticsInfoAreas = async (req,res,next)=>{
     else if(typeOfScope=="communes") ref.typeOfScope = "commune"
     else if(typeOfScope =="villages") ref.typeOfScope ="village"
     else return res.status(404).send('not found 1')
-    const area =await Scope.findOne({_id:req.query.idArea}).select('areaCode name')
+    const area =await Scope.findOne({_id:req.query.idArea}).select('areaCode _id')
     if(typeOfScope =='cities' && req.decodedToken.role =='A1') area.areaCode =""
-    console.log(area,req.decodedToken)
-    console.log((new RegExp("^"+req.decodedToken.areaCode).test(area.areaCode)))
+    
     if(!area|| !(new RegExp("^"+req.decodedToken.areaCode).test(area.areaCode))) return res.status(404).send('not found 2')
     const areas = await Scope.find({...ref, areaCode:{$regex:new RegExp("^"+ area.areaCode)}})
-                            .select('areaCode name')
+                            .select('name areaCode _id')
     if(!areas.length) return res.status(404).send('not found 3')
     const statisticsField = req.query.statisticsField
     const statisticsDatas ={
@@ -187,8 +185,8 @@ const getStatisticsInfoAreas = async (req,res,next)=>{
                        results.map((result,index)=>{
                            return {
                                areaName: areas[index].name,
-                               areaCode:areas[index].areaCode,
-                               statisticsField:result,
+                               _id:areas[index]._id,
+                               data:result,
                            }
                        })
                     ) 
