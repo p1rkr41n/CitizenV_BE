@@ -94,11 +94,12 @@ const getStatisticsInfoScopeById = async (req,res,next) =>{
         if(!isValidObjectId(Object.values(ref)[1]))
             return res.status(400).send('invalid id')
         const result = await Scope.findOne({...ref,areaCode:{$regex: new RegExp("^"+ req.decodedToken.areaCode)}}).select("areaCode")
+        if(!result) return res.status(404).send('not found')
         const areaCode = result.areaCode
-        if(!areaCode) return res.status(404).send('not found')
+        console.log(areaCode)
 
         return Promise.all([getData(areaCode,"populationData",["gender"]),
-                            getData("01","employmentAndUnemploymentData",["unemployment"]),
+                            getData(areaCode,"employmentAndUnemploymentData",["unemployment"]),
                             getData(areaCode,"ReligionData",["religion"]),
                             getData(areaCode,"RangeAgeAndGenderData",["gender","rangeAge"]),
                             getData(areaCode,"educationalData",["educationalLevel"])
@@ -109,6 +110,7 @@ const getStatisticsInfoScopeById = async (req,res,next) =>{
                                                     return {...unit._id,count:unit.count}
                                                 })
                                         })
+                                        console.log(data)
                                         return res.status(200).send({
                                             populationData:utilStatistics.formatData(results[0],GENDERS),
                                             employmentAndUnemploymentData:results[1],

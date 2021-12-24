@@ -151,7 +151,7 @@ const ObjectId = require('mongoose').Types.ObjectId
 
 exports.formatData = function(data,KEYSLIST,SECONDKEYLIST=[]) {
         const formattedData =[]
-        if(!data.length) return null
+        if(!data.length) return []
         const keyData =  Object.keys(data[0])
         KEYSLIST.forEach(firstKey=>{    
                if(SECONDKEYLIST.length){
