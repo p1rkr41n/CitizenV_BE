@@ -3,7 +3,7 @@ const updateStaticalInfo = require('./updateStaticalInfo');
 // const updateAddresses = require('./updateAddresses');
 cron.schedule(' 1 * * * *', function() { //every 1 min
     console.log('running a task every hour');
-    updateStaticalInfo();
+    updateStaticalInfo.refreshStatisticsData();
     // updateAddresses();
   });
   module.exports = cron;

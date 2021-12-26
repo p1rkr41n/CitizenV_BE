@@ -47,8 +47,8 @@ const updateAddresses = async (req,res,next)=> {
      
             })
         return Promise.all([Address.insertMany(newAddresses),StatisticsData.insertMany(newStatisticsData)])
-                        .then(result=>console.log(result))
-                        .catch(err=>console.log(err))
+                        .then(result=>res.send('success'))
+                        .catch(err=>res.send(err))
     }
     
     module.exports = {

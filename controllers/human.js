@@ -132,7 +132,7 @@ exports.getInfoHumen = async(req,res,next)=>{
                                     .select('_id')
     }
 
-        if(!result.length) return res.status(404).send('not found')
+        if(!result.length || req.query.page<=0) return res.status(404).send('not found')
         idVillages = result.map(village=>village._id)
             const idAddresses = (await Address.find({idVillageRef:{$in:idVillages}})
                                                 .select('_id'))
@@ -160,7 +160,7 @@ exports.getInfoHumen = async(req,res,next)=>{
                         })
                             return res.status(200).send(data)
                     })
-                    .catch(err=> res.status(500).send(err))                    
+                    .catch(err=> console.log(err))                    
 
 }
 
@@ -194,7 +194,9 @@ exports.getInfoHumansWithIdArea =async  function(req,res,next) {
                                         {idVillageRef:user.idManagedScopeRef}]}]})
                                     .select('_id'))
                                 .map(address=>address._id)
-    if(!idAddresses.length) return res.status(404).send('not found')
+    if(!idAddresses.length || req.query.page <=0) return res.status(404).send('not found')
+    const page =req.query.page -1
+    const numberOfDocumentsPerPage = 10
     const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
         return Human.find({idTemporaryResidenceAddressRef:{$in:idAddresses}})
                                     //populate temporary residence address
@@ -204,7 +206,8 @@ exports.getInfoHumansWithIdArea =async  function(req,res,next) {
                                 {path:'idPermanentAddressRef',model:'Address',
                                     populate:{path:addressFields,model: 'Scope',select:'name -_id'}}
                             ])
-                    .limit(5)
+                    .limit(numberOfDocumentsPerPage)
+                    .skip(numberOfDocumentsPerPage*page)
                     .then((results)=>{
                         if(!results.length)
                             res.status(404).send('not found')
@@ -283,14 +286,14 @@ exports.findHumanInfo = async (req,res,next) =>{
 
     const addresses = await Address.find(ref)
                                     .populate('idVillageRef' )
-    if(!addresses.length) return res.status(404).send('not found')
+    if(!addresses.length||req.query.page<=0) return res.status(404).send('not found')
     const addressIds =[]
     addresses.forEach(address=>{
         if((new RegExp("^"+ req.decodedToken.areaCode)).test(address.idVillageRef.areaCode))
             addressIds.push(address._id)
     })
     const page =req.query.page -1
-    const numberOfDocumentsPerPage = 1
+    const numberOfDocumentsPerPage = 2
     const addressFields ='idCountryRef idCityRef idDistrictRef idCommuneRef idVillageRef'
     return Human.find({idTemporaryResidenceAddressRef:{$in:addressIds},name:req.query.name})
                         //populate temporary residence address

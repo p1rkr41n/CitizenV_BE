@@ -23,7 +23,6 @@ const humanSchema = new Schema({
     },
     job: {
         type:String,
-        required:true,
         default:""
     },
     religion:{

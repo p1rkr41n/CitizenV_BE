@@ -13,10 +13,16 @@ const getUsersController = async function(req,res,next) {
         if(req.decodedToken.role =='A1'){
             const roleRefOfAccount =user.idRoleRef.idRoleManageRef //A2
             //find accounts have role A2
+            if(req.query.page<=0||!req.query.page) return res.status(404).send('not found')
+            const page =req.query.page -1
+            const numberOfDocumentsPerPage = 10
             const accounts =(await User.find({idRoleRef :roleRefOfAccount})
-                                        .populate('idManagedScopeRef'))
+                                        .populate('idManagedScopeRef')
+                                        .limit(numberOfDocumentsPerPage)
+                                        .skip(numberOfDocumentsPerPage*page))
                                         .map(account=> {
-                                            return {name:account.name,
+                                            return {_id:account._id,
+                                                    name:account.name,
                                                     username:account.username,
                                                     managedArea:account.idManagedScopeRef.name,
                                                     completed:account.completed,
@@ -29,15 +35,16 @@ const getUsersController = async function(req,res,next) {
         const accounts =(await User.find({addedBy:req.decodedToken._id})
                                     .populate('idManagedScopeRef'))
                                     .map(account=> {
-                                        return {name:account.name,
+                                        return {
+                                                _id:account._id,
+                                                name:account.name,
                                                 username:account.username,
                                                 managedArea:account.idManagedScopeRef.name,
                                                 completed:account.completed,
                                                 declarable:account.declarable,
-                                                idManagedScopeRef: account.idManagedScopeRef
                                             }
                                     })
-        if(accounts)
+        if(accounts.length)
             return res.status(200).send(accounts)
         return res.status(404).send('not found')
         
@@ -239,7 +246,36 @@ const removeUserController= async (req,res,next)=>{
     
 }
 
+const completeDeclareInfo =async (req,res,next)=>{
+    const user =await User.findOneAndUpdate({_id:req.decodedToken._id,username:req.decodedToken.username},
+                      {completed :true},{new:true})
+    if(!user) return res.status(400).send('invalid id')
+    return User.find({username:new RegExp("^"+user.username.slice(0,4)+"[0-9]{2}$")})
+                .then(result=>{
+                      let completed = true
+                      result.forEach(user=>{
+                            if(!user.completed) completed = false
+                      })
+                      if(completed)
+                            return Promise.all([User.findOneAndUpdate({username:user.username.slice(0,4)},
+                                                                      {completed:true},{new:true}),
+                                              User.find({username:new RegExp("^"+user.username.slice(0,2)+"[0-9]{2}$")})])
+                      return res.status(200).send('success')
+                })
+                .then(result=>{
+                      if(!result.length) return result
+                      let completed = true
+                      result[1].forEach(user=>{
+                            if(!user.completed) completed = false
+                      })
+                      if(completed)
+                            User.findOneAndUpdate({username:user.username.slice(0,2)},{completed:true},{new:true})
+                      return res.status(200).send('success')
+                })
 
+
+
+}
 module.exports ={
     createUserController,
     getUserByIdController,
@@ -247,5 +283,6 @@ module.exports ={
     getUsersController,
     changeDeclarePermissionByIdUser,
     getUserController,
-    removeUserController
+    removeUserController,
+    completeDeclareInfo,
 }

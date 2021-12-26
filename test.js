@@ -21,6 +21,11 @@ cities =[
     'Thành phố Hồ Chí Minh', 'Trà Vinh',          'Tuyên Quang',
     'Vĩnh Long',             'Vĩnh Phúc',         'Yên Bái'
   ]
+  // '^'+req.decodedToken.username+"([0-9][0-9]){1}$"
+  const username =("010408")
+  const prefix = username.slice(0,4)
+  const parttern =new RegExp("^"+username.slice(0,4)+'([0-9]){2}$')
+  console.log(parttern.test("010408"))
   
   
   // _id
