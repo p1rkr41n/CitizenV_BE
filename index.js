@@ -27,7 +27,7 @@ require("./startup/db")();
 require("./controllers/update/updater.js");
 require("./controllers/update/updateAddresses")
 
-refreshStatisticsData()
+// refreshStatisticsData()
 app.listen(port,()=>{
     console.log('app listening at http://localhost:'+port)
 })
